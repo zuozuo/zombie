@@ -1,0 +1,8 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+<% (1..100).each do |i| %>
+  user<%= i %>:
+    id: <%= i %>
+    name: User<%= i %>
+    email: user<%= i %>@edaixi.com
+<% end %>

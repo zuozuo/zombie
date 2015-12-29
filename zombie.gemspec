@@ -23,8 +23,13 @@ Gem::Specification.new do |s|
   s.add_dependency "redis"
   s.add_dependency "redis-rails"
   s.add_dependency "redis-objects"
+	s.add_dependency 'hashie-forbidden_attributes'
 
+  s.add_development_dependency "rake"
+  s.add_development_dependency 'byebug'
+  s.add_development_dependency "spring"
   s.add_development_dependency "sqlite3"
   s.add_development_dependency "bundler"
-  s.add_development_dependency "rake"
+  s.add_development_dependency "pry-rails"
+  s.add_development_dependency 'minitest-reporters'
 end
