@@ -30,19 +30,15 @@ module Zombie
 		end
 
 		def self.model_structure=(structure={})
+			undef_method *self.model_class_methods
+			
 			s = structure.with_indifferent_access
-			s[:model_class_methods] = s - self.public_methods
-			s[:model_methods] = s - self.public_instance_methods
+			s[:class_methods] = s[:class_methods] - self.public_methods
+			s[:instance_methods] = s[:instance_methods] - self.public_instance_methods
 			@model_structure = s
-			# self
-		end
 
-		def self.method_missing(meth, *args, &blk)
-			if self.model_class_methods.include?(meth.to_s)
-				collection.send(meth, *args, &blk)
-			else
-				super(meth, *args, &blk)
-			end
+			self.extend SingleForwardable
+			self.def_delegators :collection, *self.model_class_methods
 		end
 
 		def self.model_structure
@@ -50,15 +46,15 @@ module Zombie
 		end
 
 		def self.columns
-			@model_structure[:columns]
+			self.model_structure[:columns] || {}
 		end
 
 		def self.model_methods
-			@model_structure[:instance_methods]
+			self.model_structure[:instance_methods] || []
 		end
 
 		def self.model_class_methods
-			@model_structure[:class_methods]
+			self.model_structure[:class_methods] || []
 		end
 
 	end
