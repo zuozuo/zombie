@@ -11,9 +11,16 @@ require 'zombie/collection'
 
 if Rails.env.development? || Rails.env.test?
 	require 'pry-rails'
-	Pry.config.print = proc { |output, value| output.puts "=> #{value.inspect}" } if defined?(Pry)
+  Pry.config.print = proc do |output, value, _pry_|
+    _pry_.pager.open do |pager|
+      pager.print _pry_.config.output_prefix
+			value.load_data if value.is_a?(Zombie::Collection)
+      Pry::ColorPrinter.pp(value, pager, Pry::Terminal.width! - 1)
+    end
+  end
+	
 end
-
+# 
 module Zombie
 	extend Configurable
   extend ActiveSupport::Concern
@@ -62,10 +69,9 @@ module Zombie
 	# end
 
 	def self.const_missing const
-		resource = const.to_s.underscore.pluralize
-		params = { methods: { _model_structure_: [] }.to_json }
+		resources = const.to_s.underscore.pluralize
 
-		get resource, params do |res, req, result, &blk|
+		get resources, [:_model_structure_] do |res, req, result, &blk|
 			if res.code == 200
 				model = Class.new(Zombie::Model)
 				model.model_structure = JSON.parse(res)['results']

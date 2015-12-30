@@ -3,4 +3,10 @@ module Zombie
 
 	class InvalidResponse < Error
 	end
+
+	class InvalidMethodName < Error
+	end
+
+	class InvalidArguments < Error
+	end
 end

@@ -11,3 +11,15 @@ class ActiveRecord::Base
 		end
 	end
 end
+
+class String
+	def  valid_method_name?
+		self.to_sym.valid_method_name?
+	end
+end
+
+class Symbol
+	def valid_method_name?
+		return /[@$"]/ !~ inspect
+	end
+end
