@@ -4,7 +4,7 @@ module Zombie
 		%w(get post put patch delete head).each do |method|
 			send :define_method, method do |url, payload={}, headers={}, &block|
 				# begin
-					url = "#{Zombie.service_host}/api/#{Zombie.version}/#{url}.json"
+					url = "#{Zombie.service_host}/api/#{Zombie.version}/zombie/#{url}.json"
 					RestClient::Request.execute(
 						method: method, url: url, payload: payload, headers: headers, &block
 					)

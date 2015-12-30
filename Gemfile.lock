@@ -108,6 +108,9 @@ GEM
       coderay (~> 1.1.0)
       method_source (~> 0.8.1)
       slop (~> 3.4)
+    pry-doc (0.8.0)
+      pry (~> 0.9)
+      yard (~> 0.8)
     pry-rails (0.3.4)
       pry (>= 0.9.10)
     rack (1.6.4)
@@ -188,6 +191,7 @@ GEM
       coercible (~> 1.0)
       descendants_tracker (~> 0.0, >= 0.0.3)
       equalizer (~> 0.0, >= 0.0.9)
+    yard (0.8.7.6)
 
 PLATFORMS
   ruby
@@ -196,6 +200,7 @@ DEPENDENCIES
   bundler
   byebug
   minitest-reporters
+  pry-doc
   pry-rails
   rake
   spring

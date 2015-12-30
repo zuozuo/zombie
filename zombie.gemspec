@@ -31,5 +31,6 @@ Gem::Specification.new do |s|
   s.add_development_dependency "sqlite3"
   s.add_development_dependency "bundler"
   s.add_development_dependency "pry-rails"
-  s.add_development_dependency 'minitest-reporters'
+  s.add_development_dependency "pry-doc"
+  s.add_development_dependency "minitest-reporters"
 end
