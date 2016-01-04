@@ -3,6 +3,14 @@ require 'zombie/exception'
 module Zombie
 	module HttpHelper
 
+		# class_request :get, :users, 1, [  [ :where, [{id:1}] ], [ :exists?, [id:1] ]  ]
+		def instance_requests(http_method, resources, id, methods, headers={}, &blk)
+			methods = parse_and_check_methods! methods
+			url = simple_url_for "#{resources}/#{id}", methods
+			request http_method, url, methods, headers, &blk
+		end
+
+		# instance_request :get, :users, 1, :update, {name: 'new_name'}
 		def instance_request(http_method, resources, id, method=nil, params={}, headers={}, &blk)
 			if method.present?
 				check_method_name!(method)
@@ -15,10 +23,25 @@ module Zombie
 			request http_method, url, payload, headers, &blk
 		end
 
+		# class_request :get, :users, [  [ :where, [{id:1}] ], [ :exists?, [id:1] ]  ]
 		def class_request(http_method, resources, methods, headers={}, &blk)
 			methods = parse_and_check_methods! methods
 			url = simple_url_for resources, methods
 			request http_method, url, methods, headers, &blk
+		end
+
+		%w(get put patch post head delete).each do |meth|
+			define_method "instance_#{meth}" do |resources, id, method=nil, params={}, headers={}, &blk|
+				instance_request meth, resources, id, method, params, headers, &blk
+			end
+
+			define_method "instance_#{meth}s" do |resources, id, methods, headers={}, &blk|
+				instance_requests meth, resources, id, methods, headers, &blk
+			end
+
+			define_method "class_#{meth}" do |resources, methods, headers={}, &blk|
+				class_request meth, resources, methods, headers, &blk
+			end
 		end
 
 		def request(http_method, url, payload={}, headers={}, &blk)
@@ -27,7 +50,7 @@ module Zombie
 				res = RestClient::Request.execute(
 					method: http_method, url: url, payload: payload, headers: headers, &blk
 				)
-				parse_json(res)['results']
+				block_given? or parse_json(res)['results']
 
 			rescue Exception => e
 				# TODO handle request exception for zombie
@@ -63,15 +86,15 @@ module Zombie
 			case methods
 			when String, Symbol
 				{ args: [].to_json, method: methods }
-			when Hash
-				methods.each do |meth, args|
-					check_method_name!(meth)
-					check_method_arguments!(args)
+			when Array
+				methods.each do |meth|
+					check_method_name!(meth.first)
+					check_method_arguments!(meth.last)
 				end
 				if methods.length == 1
-					{ args: methods.values.first.to_json, method: methods.keys.first }
+					{ args: methods.first.last.to_json, method: methods.first.first }
 				else
-					{ methods: methods.to_a.to_json }
+					{ methods: methods.to_json }
 				end
 			else
 				invalid_method_name! methods

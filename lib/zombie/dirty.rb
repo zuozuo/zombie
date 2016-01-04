@@ -4,7 +4,7 @@ class ActiveRecord::Base
 			hash[:columns] = {}
 			self.columns_hash.each { |k, v| hash[:columns][k] = v.type }
 
-			exceptions = Object.public_methods
+			exceptions = Object.public_methods + [:method_missing, :define_singleton_method, :method, :public_method, :singleton_method]
 
 			hash[:class_methods] = self.public_methods - exceptions
 			hash[:instance_methods] = self.public_instance_methods - exceptions
