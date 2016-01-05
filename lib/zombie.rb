@@ -15,17 +15,24 @@ module Zombie
   extend ActiveSupport::Concern
 	extend HttpHelper
 
-	# included do; end
+	# included do
+	# 	# alias _old_scope_ scope
+	# end
 
+	# module ClassMethods
+	# 	def scope(name, scope_options = {})
+	# 		_old_scope_(name, scope_options)
+	# 	end
+	# 	
+	# 	# def zombie_
+	# 	# end
+	# end
+	
 	def self.const_missing const
-		resources = const.to_s.underscore.pluralize
-		class_get resources, :_model_structure_ do |res, req, result, &blk|
-			res.code != 200 and super(const)
-
-			return Class.new(Zombie::Model).tap do |model|
-				self.const_set const, model
-				model.model_structure = JSON.parse(res)['results']
-			end
+		res = class_get const.to_s.underscore.pluralize, :_model_structure_
+		res and return Class.new(Zombie::Model).tap do |model|
+			self.const_set const, model
+			model.model_structure = res
 		end
 	end
 end

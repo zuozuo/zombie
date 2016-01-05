@@ -24,6 +24,7 @@ module Zombie
 		end
 
 		# class_request :get, :users, [  [ :where, [{id:1}] ], [ :exists?, [id:1] ]  ]
+		# class_request :get, :users, :_model_structure_
 		def class_request(http_method, resources, methods, headers={}, &blk)
 			methods = parse_and_check_methods! methods
 			url = simple_url_for resources, methods
@@ -52,12 +53,16 @@ module Zombie
 				)
 				block_given? or parse_json(res)['results']
 
-			rescue Exception => e
-				# TODO handle request exception for zombie
-				raise e
-				# puts e.message
-				# puts e.http_body if e.respond_to?(:http_body)
-				# puts e.backtrace[0..10]
+			rescue RestClient::Exception => e
+				res = parse_json(e.http_body)
+
+				backtrace = res['backtrace'] + e.zombie_backtrace
+				puts backtrace
+				puts ''
+				error_class = get_or_set_exception(res['error'])
+				error = error_class.new(res['message'])
+				error.set_backtrace(backtrace)
+				raise error
 			end
 		end
 
@@ -74,8 +79,15 @@ module Zombie
 		end
 
 		def base_url_for(resources)
-			"#{Zombie.service_host}/api/#{Zombie.version}/zombie/#{resources}.json"
+			url = resources.split('/').map { |str| CGI::escape str }.join('/')
+			"#{Zombie.service_host}/api/#{Zombie.version}/zombie/#{url}.json"
 		end
+
+		def get_or_set_exception(const)
+			Zombie.const_defined?(const) and return Zombie.const_get(const)
+			Zombie.const_set(const, Class.new(Error))
+		end
+
 
 		private
 

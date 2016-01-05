@@ -5,6 +5,18 @@ module Zombie
 		format :json
 		prefix :api
 
+		rescue_from :all do |e|
+			Rails.logger.error e.class.name
+			Rails.logger.error e.message
+			e.zombie_backtrace.each {|line| Rails.logger.error line }
+
+			error!({
+				error: e.class.name,
+				message: e.message,
+				backtrace: e.zombie_backtrace
+			}, 500)
+		end
+
 		helpers do
 			def arguments
 				params[:args].blank? ? [] : JSON.parse(params[:args])
@@ -24,7 +36,7 @@ module Zombie
 				when Array
 					methods.each { |m| resources = resources.send(m.first, *m.last) }
 				else
-					#TODO raise params[:methods] invalid error
+					raise "invalid params[:methods]: #{params[:methods]}, params[:methods].should be an array to_json"
 				end
 				resources
 			end
@@ -36,7 +48,6 @@ module Zombie
 				else
 					handle_instance_crud(resource)
 				end
-				resource
 			end
 
 			def handle_instance_crud(resource)
@@ -81,7 +92,7 @@ module Zombie
 			end
 			route :any, ":resources/:id_or_method" do
 				objects = if params[:id_or_method].to_i.zero?
-										resource_model.send(params[:method] || params[:id_or_method], *arguments)
+										resource_model.send(params[:id_or_method], *arguments)
 									else
 										handle_instance_methods
 									end
@@ -93,7 +104,7 @@ module Zombie
 				requires :method, type: String, desc: 'resource instance method', regexp: /\A([a-zA-Z_]+|\[\])[\?!=]?\Z/
 			end
 			route :any, ":resources/:id/:method" do
-				@return.merge!(results: resource_model.find(params[:id]).send(params[:method]))
+				@return.merge!(results: resource_model.find(params[:id]).send(params[:method], *arguments))
 			end 
 		end
 	end

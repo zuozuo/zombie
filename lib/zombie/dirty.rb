@@ -12,6 +12,16 @@ class ActiveRecord::Base
 	end
 end
 
+class Exception
+	def zombie_backtrace
+		arr = []
+		self.backtrace.each do |line|
+			arr << line
+			line =~ /zombie\/lib\/zombie/ and return arr
+		end
+	end
+end
+
 class String
 	def  valid_method_name?
 		self.to_sym.valid_method_name?

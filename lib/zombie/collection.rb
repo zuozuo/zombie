@@ -4,8 +4,8 @@ module Zombie
 
 		attr_reader :klass, :loaded, :collection, :is_collection
 
-		Methods = :to_s, :==, :eql?, :[], :[]=, :at, :fetch, :first, :last, :concat, :<<, :push, :pop, :shift, :unshift, :insert, :length, :size, :empty?, :find_index, :index, :rindex, :join, :reverse, :reverse!, :rotate, :rotate!, :sort, :sort!, :sort_by!, :collect, :collect!, :select!, :keep_if, :values_at, :delete, :delete_at, :delete_if, :reject, :reject!, :zip, :transpose, :replace, :clear, :fill, :include?, :<=>, :slice, :slice!, :+, :*, :-, :&, :|, :uniq, :uniq!, :compact, :compact!, :flatten, :flatten!, :count, :shuffle!, :shuffle, :sample, :cycle, :permutation, :combination, :repeated_permutation, :repeated_combination, :product, :take, :take_while, :drop, :drop_while, :bsearch, :pack, :append, :prepend, :extract_options!, :blank?, :deep_dup, :to_param, :to_query, :to_sentence, :to_formatted_s, :to_default_s, :to_xml, :to_json_with_active_support_encoder, :to_json_without_active_support_encoder, :to_json, :as_json, :shelljoin, :in_groups_of, :in_groups, :split, :each, :map
-		# :inspect,
+		Methods = :to_s, :==, :eql?, :[], :[]=, :at, :fetch, :first, :last, :concat, :<<, :push, :pop, :shift, :unshift, :insert, :length, :size, :empty?, :find_index, :index, :rindex, :join, :reverse, :reverse!, :rotate, :rotate!, :sort, :sort!, :sort_by!, :collect, :collect!, :select!, :keep_if, :values_at, :delete, :delete_at, :delete_if, :reject, :reject!, :zip, :transpose, :replace, :clear, :fill, :include?, :<=>, :slice, :slice!, :+, :*, :-, :&, :|, :uniq, :uniq!, :compact, :compact!, :flatten, :flatten!, :shuffle!, :shuffle, :sample, :cycle, :permutation, :combination, :repeated_permutation, :repeated_combination, :product, :take, :take_while, :drop, :drop_while, :bsearch, :pack, :append, :prepend, :extract_options!, :blank?, :deep_dup, :to_param, :to_query, :to_sentence, :to_formatted_s, :to_default_s, :to_xml, :to_json_with_active_support_encoder, :to_json_without_active_support_encoder, :to_json, :as_json, :shelljoin, :in_groups_of, :in_groups, :split, :each, :map, :inspect
+
 		delegate *Methods, to: :collection
 
 		def initialize(klass, collection=[])
@@ -36,8 +36,56 @@ module Zombie
 		end
 		alias reload! reload
 
+		def select(*args)
+			conditions << [:select, args]
+			self.clone
+		end
+
+		def not(*args)
+			conditions << [:not, args]
+			self.clone
+		end
+
+		%w(find exists? pluck select sum explain maximum minimum average).each do |meth|
+			self.send :define_method, meth do |*args|
+				conditions << [meth, args]
+				load_data
+				@is_collection ? self : self[0]
+			end
+		end
+
+		%w(first last second third fourth fifth).each do |meth|
+			self.send :define_method, meth do |*args|
+				if self.loaded?
+					@collection.send(meth)
+				else
+					conditions << [meth, args]
+					load_data[0]
+				end
+			end
+
+			self.send :define_method, "#{meth}!" do |*args|
+				conditions << ["#{meth}!", args]
+				load_data[0]
+			end
+		end
+
+		def to_a
+			load_data
+			@collection
+		end
+
+		def count
+			conditions << [:count, []]
+			load_json.first
+		end
+
+		def ids
+			pluck :id
+		end
+
 		def load_json
-			load_data { |obj| obj }
+			load_data { |obj|  obj }
 		end
 
 		def load_data &block
@@ -84,7 +132,7 @@ module Zombie
 				end
 			when Hash
 				@is_collection = false
-				block_given? ? yield(results) : @collection << _class.new(results)
+				@collection << (block_given? ? yield(results) : _class.new(results))
 			else
 				@is_collection = false
 				@collection << results
